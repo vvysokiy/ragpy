@@ -4,6 +4,9 @@ export PYTHONPATH := $(PWD):$(PYTHONPATH)
 
 # Установка зависимостей
 install:
+	mkdir -p .cache/ollama
+	mkdir -p .db
+	mkdir -p .results
 	pip install -r requirements.txt
 
 # Запуск с простой конфигурацией
