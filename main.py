@@ -2,7 +2,7 @@ from src.db import ChromaDB
 from src.logger import logger
 from src.documents import DirectoryLoader, TextChunker
 from src.embeddings import AllMiniLMService
-
+from src.setup import Setup
 from src.utils import save_embeddings_results, save_text_chunker_results, save_search_results
 
 _DEBUG_ = True
@@ -15,6 +15,11 @@ query_list = [
 
 if __name__ == "__main__":
     logger.info("Приложение запущено")
+
+    db, embedding_service = Setup().create_pipeline()
+
+    # Очищаем базу данных в режиме отладки
+    if _DEBUG_: db.clear_collection()
 
     # Создаем DirectoryLoader
     dir_loader = DirectoryLoader()
@@ -31,40 +36,28 @@ if __name__ == "__main__":
         chunk_overlap=50
     )
 
-    # Создаем ChromaDB
-    chroma_db = ChromaDB()
-    
-    # Очищаем базу данных в режиме отладки
-    if _DEBUG_:
-        chroma_db.clear_collection()
-
-    # Создаем сервис эмбеддингов
-    embedding_service = AllMiniLMService()
-
     # Создаем чанки для каждого документа
     for document in documents:
         chunks = text_chunker.create_chunks(document)
         
-        if _DEBUG_:
-            # Сохраняем результаты TextChunker
-            save_text_chunker_results(
-                chunks, 
-                f".results/TextChunker_results_{document.metadata.get('filename', 'unknown')}.txt"
-            )
+        # Сохраняем результаты TextChunker
+        if _DEBUG_: save_text_chunker_results(
+            chunks, 
+            f".results/TextChunker_results_{document.metadata.get('filename', 'unknown')}.txt"
+        )
 
         embeddings = embedding_service.create_embeddings([chunk.content for chunk in chunks])
 
-        if _DEBUG_:
-            # Сохраняем результаты AllMiniLMService
-            save_embeddings_results(
-                chunks,
-                embeddings,
-                output_file=f".results/AllMiniLMService_results_{document.metadata.get('filename', 'unknown')}.txt"
-            )
+        # Сохраняем результаты AllMiniLMService
+        if _DEBUG_:save_embeddings_results(
+            chunks,
+            embeddings,
+            output_file=f".results/AllMiniLMService_results_{document.metadata.get('filename', 'unknown')}.txt"
+        )
 
-        chroma_db.add_documents(chunks, embeddings)
+        db.add_documents(chunks, embeddings)
 
     # Выполняем поиск по запросам и сохраняем результаты
     logger.info("Начинаем поиск по запросам...")
-    save_search_results(query_list, chroma_db, embedding_service)
+    save_search_results(query_list, db, embedding_service)
     logger.info("Поиск завершен!")

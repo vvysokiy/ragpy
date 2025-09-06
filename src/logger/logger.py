@@ -32,7 +32,7 @@ def file_handler(
         log_file: Имя файла для логов
         log_dir: Директория для файлов логов
     """
-    log_file = log_file or f"{name}.log"
+    log_file = log_file or f".{name}.log"
     # Создаем директорию для логов, если её нет
     log_path = Path(log_dir)
     log_path.mkdir(parents=True, exist_ok=True)
@@ -42,13 +42,6 @@ def file_handler(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
 
-    # Выбираем поток для вывода - файл для вывода логов
-    # handler = logging.FileHandler(
-    #     filename = log_path / log_file,
-    #     # maxBytes = 10 * 1024 * 1024, # 10MB
-    #     # backupCount = 5, # 5 файлов
-    #     encoding = "utf-8",
-    # )
     # Выбираем поток для вывода - файл для вывода логов
     handler = RotatingFileHandler(
         filename = log_path / log_file,
@@ -65,7 +58,7 @@ def setup_logger(
     name: str,
     log_file: str = "",
     log_level: int = logging.INFO,
-    log_dir: str = ".logs",
+    log_dir: str = "",
 ):
     """
     Настройка логгера с выводом в файл и консоль.
@@ -88,7 +81,6 @@ def setup_logger(
 
     # Отключаем передачу логов родительскому логгеру
     new_logger.propagate = False
-
 
     return new_logger
 
