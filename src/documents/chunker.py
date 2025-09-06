@@ -67,43 +67,80 @@ class TextChunker(BaseChunker):
 
         chunks: list[str] = []
         start = 0
+        text_len = len(text)
         
-        while start < len(text):
+        while start < text_len:
             # Определяем конец текущего чанка
-            end = start + self.chunk_size
+            end = min(start + self.chunk_size, text_len)
             
-            if end >= len(text):
-                # Последний чанк - берем весь оставшийся текст
-                chunk = text[start:]
-                if chunk.strip():  # Добавляем только если не пустой
+            # Если это последний чанк
+            if end >= text_len:
+                chunk = text[start:].strip()
+                if chunk:
                     chunks.append(chunk)
                 break
             
-            # Ищем лучшее место для разрыва, используя разделители
+            # Ищем лучшее место для разрыва
             best_split = end
+            
+            # Проверяем разделители в порядке приоритета
             for separator in self.separators:
-                # Ищем последнее вхождение разделителя в пределах чанка
-                sep_pos = text.rfind(separator, start, end)
-                if sep_pos > start:  # Найден разделитель после начала чанка
-                    best_split = sep_pos + len(separator)
+                # Ищем разделитель в последних 100 символах чанка
+                search_start = max(start, end - 100)
+                pos = text.find(separator, search_start, end)
+                
+                # Ищем последнее вхождение в этом диапазоне
+                last_pos = pos
+                while pos != -1 and pos < end:
+                    last_pos = pos
+                    pos = text.find(separator, pos + 1, end)
+                
+                if last_pos != -1 and last_pos > start:
+                    best_split = last_pos + len(separator)
                     break
             
             # Создаем чанк
-            chunk = text[start:best_split]
-            if chunk.strip():  # Добавляем только если не пустой
+            chunk = text[start:best_split].strip()
+            if chunk:
                 chunks.append(chunk)
             
-            # Вычисляем начало следующего чанка с учетом перекрытия
-            if self.chunk_overlap > 0 and best_split < len(text):
-                # Начинаем следующий чанк с перекрытием, но гарантируем продвижение вперед
-                overlap_start = best_split - self.chunk_overlap
-                start = max(start + 1, overlap_start)  # Гарантируем продвижение минимум на 1 символ
+            # Вычисляем следующую позицию с перекрытием
+            if self.chunk_overlap > 0 and best_split < text_len:
+                # Простое перекрытие с поиском пробела
+                overlap_pos = max(start + 1, best_split - self.chunk_overlap)
+                
+                # Ищем пробел в расширенном диапазоне (до половины размера чанка)
+                search_range = min(self.chunk_size // 2, self.chunk_overlap + 50)
+                search_end = min(overlap_pos + search_range, best_split)
+                
+                # Ищем пробел, начиная с желаемой позиции и двигаясь в обе стороны
+                found_space = False
+                
+                # Сначала ищем вперед (предпочтительно)
+                for i in range(overlap_pos, search_end):
+                    if i < text_len and text[i].isspace():
+                        start = i + 1
+                        found_space = True
+                        break
+                
+                # Если не нашли вперед, ищем назад
+                if not found_space:
+                    search_start = max(start + 1, overlap_pos - 30)
+                    for i in range(overlap_pos - 1, search_start - 1, -1):
+                        if i > start and i < text_len and text[i].isspace():
+                            start = i + 1
+                            found_space = True
+                            break
+                
+                # Если совсем не нашли пробел, используем исходную позицию
+                if not found_space:
+                    start = overlap_pos
             else:
                 start = best_split
             
-            # Дополнительная защита от бесконечного цикла
-            if start >= len(text):
-                break
+            # Защита от зацикливания
+            if start >= best_split:
+                start = best_split
 
         return chunks
 
