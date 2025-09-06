@@ -1,13 +1,17 @@
 from src.db import ChromaDB
 from src.logger import logger
-from src.documents import DirectoryLoader, TextChunker, Document, DocumentChunk
+from src.documents import DirectoryLoader, TextChunker
 from src.embeddings import AllMiniLMService
 
-from typing import Any
-
-from src.utils import save_embeddings_results, save_text_chunker_results
+from src.utils import save_embeddings_results, save_text_chunker_results, save_search_results
 
 _DEBUG_ = True
+
+query_list = [
+    "How does Tolstoy's *War and Peace* intertwine personal destinies with the Napoleonic Wars, and what philosophical questions about history and individual agency does it raise?",
+    "What moral and psychological conflicts drive Raskolnikov in Dostoevsky's *Crime and Punishment*, particularly around free will, guilt, and redemption?",
+    "Key traits of Russia's Silver Age poetry—symbolism, acmeism, futurism—and how Akhmatova, Blok, Mayakovsky, and Tsvetaeva embody them.",
+]
 
 if __name__ == "__main__":
     logger.info("Приложение запущено")
@@ -29,6 +33,8 @@ if __name__ == "__main__":
 
     # Создаем ChromaDB
     chroma_db = ChromaDB()
+    
+    # Очищаем базу данных в режиме отладки
     if _DEBUG_:
         chroma_db.clear_collection()
 
@@ -57,3 +63,8 @@ if __name__ == "__main__":
             )
 
         chroma_db.add_documents(chunks, embeddings)
+
+    # Выполняем поиск по запросам и сохраняем результаты
+    logger.info("Начинаем поиск по запросам...")
+    save_search_results(query_list, chroma_db, embedding_service)
+    logger.info("Поиск завершен!")

@@ -1,6 +1,6 @@
 import os
 from .logger import logger
-from typing import Any, List
+from typing import List
 from .documents.models import DocumentChunk
 
 def save_text_chunker_results(
@@ -171,4 +171,93 @@ def save_embeddings_results(chunks: List[DocumentChunk], embeddings: List[List[f
         f.write(f"Результаты сохранены: {output_file}\n")
         f.write("=" * 60 + "\n")
     
+    return output_file
+
+
+def save_search_results(query_list, chroma_db, embedding_service, output_file=".results/search_results.txt"):
+    """
+    Выполняет поиск по списку запросов и сохраняет результаты в файл.
+    
+    Args:
+        query_list: Список поисковых запросов
+        chroma_db: Экземпляр ChromaDB для поиска
+        embedding_service: Сервис для создания эмбеддингов запросов
+        output_file: Путь к файлу для сохранения результатов
+    """
+    import os
+    
+    # Создаем директорию если её нет
+    output_dir = os.path.dirname(output_file)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write("=" * 80 + "\n")
+        f.write("РЕЗУЛЬТАТЫ ПОИСКА В БАЗЕ ДАННЫХ\n")
+        f.write("=" * 80 + "\n\n")
+        
+        # Общая информация
+        f.write("ПАРАМЕТРЫ ПОИСКА:\n")
+        f.write(f"Всего запросов: {len(query_list)}\n")
+        f.write(f"Количество результатов на запрос: 3\n")
+        f.write(f"Модель эмбеддингов: sentence-transformers/all-MiniLM-L6-v2\n")
+        f.write(f"Метрика сходства: cosine similarity\n\n")
+        
+        f.write("ДЕТАЛЬНЫЕ РЕЗУЛЬТАТЫ:\n")
+        f.write("=" * 80 + "\n\n")
+        
+        # Обрабатываем каждый запрос
+        for idx, query in enumerate(query_list, 1):
+            logger.info(f"Обработка запроса {idx}/{len(query_list)}")
+            
+            f.write(f"ЗАПРОС {idx}/{len(query_list)}\n")
+            f.write("-" * 60 + "\n")
+            f.write(f"Текст запроса:\n{query}\n\n")
+            
+            try:
+                # Создаем эмбеддинг для запроса
+                query_embedding = embedding_service.create_embedding(query)
+                
+                # Выполняем поиск
+                results = chroma_db.search(
+                    query_embedding=query_embedding,
+                    n_results=3
+                )
+                
+                f.write(f"НАЙДЕНО РЕЗУЛЬТАТОВ: {len(results)}\n\n")
+                
+                # Выводим результаты
+                for result_idx, result in enumerate(results, 1):
+                    f.write(f"РЕЗУЛЬТАТ {result_idx}:\n")
+                    f.write(f"ID документа: {result['id']}\n")
+                    f.write(f"Расстояние (cosine): {result['distance']:.6f}\n")
+                    f.write(f"Сходство: {1 - result['distance']:.6f}\n")
+                    f.write("Содержимое:\n")
+                    f.write("-" * 40 + "\n")
+                    f.write(result['content'] + "\n")
+                    f.write("-" * 40 + "\n\n")
+                
+                # Анализ качества результатов
+                if results:
+                    best_similarity = 1 - results[0]['distance']
+                    worst_similarity = 1 - results[-1]['distance']
+                    f.write("АНАЛИЗ РЕЗУЛЬТАТОВ:\n")
+                    f.write(f"Лучшее сходство: {best_similarity:.6f}\n")
+                    f.write(f"Худшее сходство: {worst_similarity:.6f}\n")
+                    f.write(f"Разброс сходства: {best_similarity - worst_similarity:.6f}\n")
+                else:
+                    f.write("АНАЛИЗ: Результаты не найдены\n")
+                
+            except Exception as e:
+                f.write(f"ОШИБКА при обработке запроса: {str(e)}\n")
+                logger.error(f"Ошибка поиска для запроса {idx}: {e}")
+            
+            f.write("\n" + "~" * 80 + "\n\n")
+        
+        f.write("=" * 80 + "\n")
+        f.write("ПОИСК ЗАВЕРШЕН\n")
+        f.write(f"Результаты сохранены: {output_file}\n")
+        f.write("=" * 80 + "\n")
+    
+    logger.info(f"Результаты поиска сохранены в файл: {output_file}")
     return output_file
