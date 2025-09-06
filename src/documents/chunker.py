@@ -38,18 +38,17 @@ class TextChunker(BaseChunker):
         self,
         chunk_size: int = 500,
         chunk_overlap: int = 50,
-        separator: str = "\n"
-        # separators: list[str] = ["\n\n", "\n", ". ", "! ", "? "]  # приоритетные разделители
+        separators: list[str] = ["\n\n", "\n", ". ", "! ", "? "],
     ):
         """
         Args:
             chunk_size: Максимальный размер чанка в символах
             chunk_overlap: Количество символов перекрытия между чанками
-            separator: Символ или строка для разделения текста
+            separators: Символы или строки для разделения текста
         """
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
-        self.separator = separator
+        self.separators = separators
 
     def split_text(self, text: str) -> list[str]:
         """
@@ -64,47 +63,47 @@ class TextChunker(BaseChunker):
 
         if not text:
             logger.warning("Текст пустой")
+            return []
 
-        # Разбиваем текст по сепаратору
-        parts = text.split(self.separator)
         chunks: list[str] = []
-        current_chunk: list[str] = []
-        current_length = 0
-
-        for part in parts:
-            part_length = len(part)
-            # print(f"current_chunk: {current_chunk}")
-
-            if current_length + part_length <= self.chunk_size:
-                current_chunk.append(part)
-                current_length += part_length + len(self.separator)
+        start = 0
+        
+        while start < len(text):
+            # Определяем конец текущего чанка
+            end = start + self.chunk_size
+            
+            if end >= len(text):
+                # Последний чанк - берем весь оставшийся текст
+                chunk = text[start:]
+                if chunk.strip():  # Добавляем только если не пустой
+                    chunks.append(chunk)
+                break
+            
+            # Ищем лучшее место для разрыва, используя разделители
+            best_split = end
+            for separator in self.separators:
+                # Ищем последнее вхождение разделителя в пределах чанка
+                sep_pos = text.rfind(separator, start, end)
+                if sep_pos > start:  # Найден разделитель после начала чанка
+                    best_split = sep_pos + len(separator)
+                    break
+            
+            # Создаем чанк
+            chunk = text[start:best_split]
+            if chunk.strip():  # Добавляем только если не пустой
+                chunks.append(chunk)
+            
+            # Вычисляем начало следующего чанка с учетом перекрытия
+            if self.chunk_overlap > 0 and best_split < len(text):
+                # Начинаем следующий чанк с перекрытием, но гарантируем продвижение вперед
+                overlap_start = best_split - self.chunk_overlap
+                start = max(start + 1, overlap_start)  # Гарантируем продвижение минимум на 1 символ
             else:
-                # Строка из текущего чанка
-                current_chunk_str = self.separator.join(current_chunk)
-                current_chunk = []
-                # Строка из предыдущего чанка
-                previous_chunk_str = chunks[-1] if len(chunks) > 0 else ''
-                # print(f"previous_chunk_str: {previous_chunk_str}")
-
-                if previous_chunk_str:
-                    overlap = previous_chunk_str[-self.chunk_overlap:]
-                    chunks.append(overlap + '' + current_chunk_str)
-                else:
-                    chunks.append(current_chunk_str)
-                current_length = 0
-
-        if current_chunk:
-            # Строка из текущего чанка
-            current_chunk_str = self.separator.join(current_chunk)
-            # Строка из предыдущего чанка
-            previous_chunk_str = chunks[-1] if len(chunks) > 0 else ''
-
-            if previous_chunk_str:
-                overlap = previous_chunk_str[-self.chunk_overlap:]
-                chunks.append(overlap + '' + current_chunk_str)
-            else:
-                chunks.append(current_chunk_str)
-            current_chunk = []
+                start = best_split
+            
+            # Дополнительная защита от бесконечного цикла
+            if start >= len(text):
+                break
 
         return chunks
 
