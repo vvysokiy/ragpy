@@ -1,0 +1,12 @@
+services:
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "11434:11434"
+    volumes:
+      # Храни всё в репозитории; можно монтировать ВЕСЬ ~/.ollama,
+      # но обычно достаточно models. Я бы рекомендовал целиком:
+      - ./.cache/ollama:/root/.ollama
+    # command не нужен — запускает entrypoint.sh

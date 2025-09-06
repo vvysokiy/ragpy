@@ -1,6 +1,7 @@
 from enum import Enum
 from pathlib import Path
 from dotenv import load_dotenv
+import os
 
 # Загружаем .env файл
 load_dotenv()
@@ -53,4 +54,9 @@ class Qwen3LightConfig(BaseConfig):
 simple_config = SimpleConfig()
 qwen3_light_config = Qwen3LightConfig()
 
-config = simple_config
+config_types = {
+    "simple_config": SimpleConfig(),
+    "qwen3_light_config": Qwen3LightConfig(),
+}
+
+config = config_types[os.getenv("CONFIG_TYPE", "simple_config")]

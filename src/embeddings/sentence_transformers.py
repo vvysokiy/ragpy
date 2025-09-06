@@ -2,7 +2,7 @@ from sentence_transformers import SentenceTransformer
 from pathlib import Path
 
 from .service import BaseEmbeddingService
-from config import EmbeddingModelsType
+from src.config import EmbeddingModelsType
 
 class SentenceTransformersEmbeddingService(BaseEmbeddingService):
     """Сервис эмбеддингов Sentence Transformers."""

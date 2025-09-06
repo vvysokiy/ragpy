@@ -1,7 +1,6 @@
 from src.db import ChromaDB
 from src.logger import logger
 from src.documents import DirectoryLoader, TextChunker
-from src.embeddings import AllMiniLMService
 from src.setup import Setup
 from src.utils import save_embeddings_results, save_text_chunker_results, save_search_results
 
@@ -16,13 +15,13 @@ query_list = [
 if __name__ == "__main__":
     logger.info("Приложение запущено")
 
-    db, embedding_service = Setup().create_pipeline()
+    db, embedding_service, dir_loader, text_chunker = Setup().create_pipeline()
 
     # Очищаем базу данных в режиме отладки
     if _DEBUG_: db.clear_collection()
 
     # Создаем DirectoryLoader
-    dir_loader = DirectoryLoader()
+    # dir_loader = DirectoryLoader()
 
     # Загружаем документы
     documents = dir_loader.load_from_directory(
@@ -31,10 +30,10 @@ if __name__ == "__main__":
     )
 
     # Создаем чанкер
-    text_chunker = TextChunker(
-        chunk_size=500,
-        chunk_overlap=50
-    )
+    # text_chunker = TextChunker(
+    #     chunk_size=500,
+    #     chunk_overlap=50
+    # )
 
     # Создаем чанки для каждого документа
     for document in documents:

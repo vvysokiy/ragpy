@@ -1,7 +1,8 @@
 from .db import ChromaDB
 from .embeddings import AllMiniLMService
+from src.documents import DirectoryLoader, TextChunker
 from .logger import LoggerService
-from config import (
+from src.config import (
     VectorDBType,
     EmbeddingModelsType,
     LLMModelsType,
@@ -49,8 +50,19 @@ class Setup(LoggerService):
             # Создаем сервис эмбеддингов
             embedding_service = self.get_embedding_service()
             self._logger_info(f"Сервис эмбеддингов инициализирован: {config.EMBEDDING_MODEL}")
+
+            # Создаем DirectoryLoader
+            dir_loader = DirectoryLoader()
+            self._logger_info(f"DirectoryLoader инициализирован: {config.DOCS_DIR}")
+
+            # Создаем TextChunker
+            text_chunker = TextChunker(
+                chunk_size=config.CHUNK_SIZE,
+                chunk_overlap=config.CHUNK_OVERLAP
+            )
+            self._logger_info(f"TextChunker инициализирован: {config.CHUNK_SIZE}, {config.CHUNK_OVERLAP}")
             
-            return db, embedding_service
+            return db, embedding_service, dir_loader, text_chunker  
             
         except Exception as e:
             self._logger_error(f"Ошибка инициализации пайплайна: {e}")
