@@ -1,11 +1,13 @@
 from src.db import ChromaDB
 from src.logger import logger
 from src.documents import DirectoryLoader, TextChunker, Document, DocumentChunk
-
+from src.embeddings import AllMiniLMService
 
 from typing import Any
 
-from src.utils import save_text_chunker_results, save_chunks_analysis, save_formatted_results
+from src.utils import save_embeddings_results, save_text_chunker_results, save_chunks_analysis, save_formatted_results
+
+_DEBUG_ = True
 
 if __name__ == "__main__":
     logger.info("Приложение запущено")
@@ -23,15 +25,28 @@ if __name__ == "__main__":
         chunk_overlap=50
     )
 
+    embedding_service = AllMiniLMService()
+
     # Создаем чанки для каждого документа
     for document in documents:
         chunks = text_chunker.create_chunks(document)
         
-        # Сохраняем результаты TextChunker
-        save_text_chunker_results(
-            chunks, 
-            f".results/TextChunker_results_{document.metadata.get('filename', 'unknown')}.txt"
+        if _DEBUG_:
+            # Сохраняем результаты TextChunker
+            save_text_chunker_results(
+                chunks, 
+                f".results/TextChunker_results_{document.metadata.get('filename', 'unknown')}.txt"
+            )
+
+        embeddings = embedding_service.create_embeddings([chunk.content for chunk in chunks])
+
+        results_path = save_embeddings_results(
+            chunks,
+            embeddings,
+            output_file=f".results/AllMiniLMService_results_{document.metadata.get('filename', 'unknown')}.txt"
         )
+        
+
 
     # from src.embeddings import AllMiniLMService
 

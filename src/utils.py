@@ -1,7 +1,7 @@
+import os
 from .logger import logger
-from typing import Any
+from typing import Any, List
 from .documents.models import DocumentChunk
-
 
 def save_chunks_analysis(chunks: list[DocumentChunk], output_file: str):
     """
@@ -77,7 +77,6 @@ def save_text_chunker_results(
     """
     try:
         # Создаем директорию, если её нет
-        import os
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         
         with open(output_file, 'w', encoding='utf-8') as f:
@@ -146,3 +145,91 @@ def save_text_chunker_results(
     except Exception as e:
         logger.error(f"Ошибка при сохранении результатов TextChunker: {str(e)}")
         raise
+
+
+def save_embeddings_results(chunks: List[DocumentChunk], embeddings: List[List[float]], output_file: str) -> str:
+    """
+    Сохраняет результаты создания эмбеддингов в файл.
+    
+    Args:
+        chunks: Список чанков документа
+        embeddings: Список эмбеддингов для каждого чанка
+        output_file: Путь к файлу для сохранения результатов
+        
+    Returns:
+        Путь к созданному файлу с результатами
+    """
+    # Создаем директорию если её нет
+    output_dir = os.path.dirname(output_file)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    
+    with open(output_file, 'w', encoding='utf-8') as f:
+        # Общая статистика
+        f.write("ОБЩАЯ СТАТИСТИКА:\n")
+        f.write(f"Всего чанков: {len(chunks)}\n")
+        f.write(f"Всего эмбеддингов: {len(embeddings)}\n")
+        if embeddings:
+            f.write(f"Размерность эмбеддингов: {len(embeddings[0])}\n")
+        
+        # Получаем имя файла из метаданных первого чанка
+        document_filename = "unknown"
+        if chunks:
+            document_filename = chunks[0].metadata.get('filename', 'unknown')
+        f.write(f"Исходный документ: {document_filename}\n\n")
+        
+        # Параметры эмбеддингов
+        f.write("ПАРАМЕТРЫ ЭМБЕДДИНГОВ:\n")
+        f.write(f"Модель: sentence-transformers/all-MiniLM-L6-v2\n")
+        f.write(f"Количество обработанных чанков: {len(chunks)}\n\n")
+        
+        f.write("ДЕТАЛЬНАЯ ИНФОРМАЦИЯ ПО ЭМБЕДДИНГАМ:\n")
+        f.write("=" * 60 + "\n\n")
+        
+        # Информация по каждому чанку и его эмбеддингу
+        for idx, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+            f.write(f"ЧАНК {idx + 1}/{len(chunks)}\n")
+            f.write(f"ID чанка: {chunk.chunk_id}\n")
+            f.write(f"Индекс: {chunk.chunk_index}\n")
+            f.write(f"Размер текста: {len(chunk.content)} символов\n")
+            f.write(f"ID документа: {chunk.doc_id}\n")
+            f.write("Метаданные:\n")
+            for key, value in chunk.metadata.items():
+                f.write(f"  {key}: {value}\n")
+            
+            f.write("\nСОДЕРЖИМОЕ ЧАНКА:\n")
+            f.write("-" * 50 + "\n")
+            f.write(chunk.content + "\n")
+            f.write("-" * 50 + "\n")
+            
+            f.write(f"\nЭМБЕДДИНГ (размерность: {len(embedding)}):\n")
+            f.write("-" * 50 + "\n")
+            # Показываем первые 10 и последние 10 значений эмбеддинга
+            if len(embedding) > 20:
+                first_10 = embedding[:10]
+                last_10 = embedding[-10:]
+                f.write("Первые 10 значений: " + ", ".join(f"{val:.6f}" for val in first_10) + "\n")
+                f.write("...\n")
+                f.write("Последние 10 значений: " + ", ".join(f"{val:.6f}" for val in last_10) + "\n")
+            else:
+                f.write("Все значения: " + ", ".join(f"{val:.6f}" for val in embedding) + "\n")
+            f.write("-" * 50 + "\n")
+            
+            # Статистика эмбеддинга
+            f.write(f"\nСТАТИСТИКА ЭМБЕДДИНГА:\n")
+            f.write(f"Минимальное значение: {min(embedding):.6f}\n")
+            f.write(f"Максимальное значение: {max(embedding):.6f}\n")
+            f.write(f"Среднее значение: {sum(embedding) / len(embedding):.6f}\n")
+            
+            # Норма вектора (L2)
+            norm = sum(val ** 2 for val in embedding) ** 0.5
+            f.write(f"L2 норма: {norm:.6f}\n")
+            
+            f.write("\n" + "~" * 30 + "\n\n")
+        
+        f.write("=" * 60 + "\n")
+        f.write("АНАЛИЗ ЗАВЕРШЕН\n")
+        f.write(f"Результаты сохранены: {output_file}\n")
+        f.write("=" * 60 + "\n")
+    
+    return output_file
