@@ -1,18 +1,14 @@
 from .db import ChromaDB
 from .embeddings import AllMiniLMService
-from .logger import logger
+from .logger import LoggerService
 from config import (
-    BaseConfig,
     VectorDBType,
     EmbeddingModelsType,
     LLMModelsType,
-    simple_config,
-    qwen3_light_config
+    config,
 )
 
-config = simple_config;
-
-class Setup:
+class Setup(LoggerService):
     """Инициализация компонентов системы на основе конфигурации"""
 
     @staticmethod
@@ -43,19 +39,19 @@ class Setup:
 
     def create_pipeline(self):
         """Создает полный пайплайн обработки"""
-        logger.info(f"Инициализация пайплайна с конфигурацией: {config.__class__.__name__}")
+        self._logger_info(f"Инициализация пайплайна с конфигурацией: {config.__class__.__name__}")
         
         try:
             # Создаем базу данных
             db = self.get_db()
-            logger.info(f"База данных инициализирована: {config.DB_NAME}")
+            self._logger_info(f"База данных инициализирована: {config.DB_NAME}")
             
             # Создаем сервис эмбеддингов
             embedding_service = self.get_embedding_service()
-            logger.info(f"Сервис эмбеддингов инициализирован: {config.EMBEDDING_MODEL}")
+            self._logger_info(f"Сервис эмбеддингов инициализирован: {config.EMBEDDING_MODEL}")
             
             return db, embedding_service
             
         except Exception as e:
-            logger.error(f"Ошибка инициализации пайплайна: {e}")
+            self._logger_error(f"Ошибка инициализации пайплайна: {e}")
             raise

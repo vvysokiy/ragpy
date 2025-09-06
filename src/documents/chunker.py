@@ -2,9 +2,9 @@ import uuid  # Для генерации уникальных идентифик
 
 from .models import Document, DocumentChunk
 
-from src.logger import logger
+from ..logger import LoggerService
 
-class BaseChunker:
+class BaseChunker(LoggerService):
     """Базовый класс для разбиения документов на чанки."""
 
     def split_text(self, text: str) -> list[str]:
@@ -62,7 +62,7 @@ class TextChunker(BaseChunker):
         """
 
         if not text:
-            logger.warning("Текст пустой")
+            self._logger_warning("Текст пустой")
             return []
 
         chunks: list[str] = []

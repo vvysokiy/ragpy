@@ -1,9 +1,8 @@
 from sentence_transformers import SentenceTransformer
 from pathlib import Path
 
-# from ..logger import logger
-
 from .service import BaseEmbeddingService
+from config import EmbeddingModelsType
 
 class SentenceTransformersEmbeddingService(BaseEmbeddingService):
     """Сервис эмбеддингов Sentence Transformers."""
@@ -38,7 +37,7 @@ class SentenceTransformersEmbeddingService(BaseEmbeddingService):
 class AllMiniLMService(SentenceTransformersEmbeddingService):
     """Сервис эмбеддингов для модели All-MiniLM-L6-v2."""
 
-    MODEL_NAME: str = "all-MiniLM-L6-v2"
+    MODEL_NAME: str = EmbeddingModelsType.ALL_MINI_LM_L6_V2.value
     BATCH_SIZE = 64
 
     def __init__(self):

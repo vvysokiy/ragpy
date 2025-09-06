@@ -1,3 +1,5 @@
+export PYTHONPATH := $(PWD):$(PYTHONPATH)
+
 .PHONY: test test-verbose clean install
 
 # Запуск всех тестов

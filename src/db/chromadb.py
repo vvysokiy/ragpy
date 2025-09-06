@@ -4,31 +4,10 @@ from typing import Optional, Sequence
 from pathlib import Path
 
 from ..documents.models import DocumentChunk, Metadata, ChunkID, Content
-from ..logger import logger
-
-class DBLogger:
-    def _logger_info(self, message: str):
-        """
-        Логирует информационное сообщение с указанием имени класса.
-
-        Args:
-            message (str): Сообщение для логирования.
-        """
-        name = self.__class__.__name__
-        logger.info("[%s] %s", name, message)
-
-    def _logger_error(self, message: str):
-        """
-        Логирует сообщение об ошибке с указанием имени класса.
-
-        Args:
-            message (str): Сообщение об ошибке для логирования.
-        """
-        name = self.__class__.__name__
-        logger.error("[%s] %s", name, message)
+from ..logger import LoggerService
 
 
-class ChromaDB(DBLogger):
+class ChromaDB(LoggerService):
     """Хранилище векторных представлений на основе ChromaDB."""
 
     client: chromadb.ClientAPI

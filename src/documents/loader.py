@@ -8,11 +8,11 @@ from pathlib import Path  # Path - для удобной работы с пут�
 from PyPDF2 import PdfReader # Для работы с PDF
 from docx import Document as DocxDocument # Для работы с DOCX
 
-from src.logger import logger
+from ..logger import LoggerService
 
 from .models import Document
 
-class BaseDocumentLoader(ABC):
+class BaseDocumentLoader(ABC, LoggerService):
     """Абстрактный базовый класс для загрузчиков документов."""
 
     logger_name: str
@@ -29,46 +29,26 @@ class BaseDocumentLoader(ABC):
         raise NotImplementedError("Метод load должен быть реализован в подклассе.")
         # pass  # Абстрактный метод, реализация будет в дочерних классах
 
-    def _logger_info(self, message: str):
-        """
-        Логирует информационное сообщение с указанием имени класса.
-
-        Args:
-            message (str): Сообщение для логирования.
-        """
-        name = self.__class__.__name__
-        logger.info(f"[{name}] {message}")
-
-    def _logger_error(self, message: str):
-        """
-        Логирует сообщение об ошибке с указанием имени класса.
-
-        Args:
-            message (str): Сообщение об ошибке для логирования.
-        """
-        name = self.__class__.__name__
-        logger.error(f"[{name}] {message}")
-
     def _io_error(self, path: Path, error: str):
         """
         Логирует сообщение об ошибке I/O с указанием имени класса и пути файла.
         """
         name = self.__class__.__name__
-        logger.error(f"[{name}] Ошибка I/O при чтении файла {str(path)}: {error}")
+        self._logger_error(f"[{name}] Ошибка I/O при чтении файла {str(path)}: {error}")
 
     def _encoding_error(self, path: Path, error: str):
         """
         Логирует сообщение об ошибке кодировки с указанием имени класса и пути файла.
         """
         name = self.__class__.__name__
-        logger.error(f"[{name}] Ошибка кодировки файла {str(path)}: {error}")
+        self._logger_error(f"[{name}] Ошибка кодировки файла {str(path)}: {error}")
 
     def _general_error(self, path: Path, error: str):
         """
         Логирует сообщение об общей ошибке с указанием имени класса и пути файла.
         """
         name = self.__class__.__name__
-        logger.error(f"[{name}] Ошибка при загрузке файла {str(path)}: {error}")
+        self._logger_error(f"[{name}] Ошибка при загрузке файла {str(path)}: {error}")
 
     def _path_check(self, path: Path) -> bool:
         """
@@ -244,7 +224,7 @@ class DocxLoader(BaseDocumentLoader):
             return None
 
 # Загрузчик для всех поддерживаемых файлов из директории
-class DirectoryLoader():
+class DirectoryLoader(LoggerService):
     """Загрузчик для всех поддерживаемых файлов из директории."""
 
     def __init__(self):
@@ -270,12 +250,12 @@ class DirectoryLoader():
             bool: True, если путь существует и является файлом, иначе False.
         """
         if not path.exists():
-            logger.error(f"Файл не найден: {str(path)}")
+            self._logger_error(f"Файл не найден: {str(path)}")
             return False
 
         # Проверяем, что это файл, а не директория
         if not path.is_file():
-            logger.error(f"Указанный путь не является файлом: {str(path)}")
+            self._logger_error(f"Указанный путь не является файлом: {str(path)}")
             return False
             
         return True
@@ -302,10 +282,8 @@ class DirectoryLoader():
         loader = self.loaders.get(extension, None)
 
         if loader is None:
-            logger.error(
-                "Неподдерживаемый тип файла %s. Поддерживаемые типы: %s",
-                extension,
-                ", ".join(self.loaders.keys())
+            self._logger_error(
+                f"Неподдерживаемый тип файла {extension}. Поддерживаемые типы: {', '.join(self.loaders.keys())}"
             )
             return None
 
@@ -328,7 +306,7 @@ class DirectoryLoader():
         documents: list[Document] = [] # Список для хранения загруженных документов
 
         if not path.is_dir() or not path.exists():
-            logger.error("Директория не найдена: %s", directory)
+            self._logger_error(f"Директория не найдена: {directory}")
             return documents
 
         # Перебираем все файлы в директории, соответствующие паттерну
@@ -339,5 +317,5 @@ class DirectoryLoader():
             if doc := self._load(str(file_path)):
                 documents.append(doc)
 
-        logger.info("Загружено %s документов из %s", len(documents), directory)
+        self._logger_info(f"Загружено {len(documents)} документов из {directory}")
         return documents

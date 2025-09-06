@@ -1,6 +1,5 @@
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 from dotenv import load_dotenv
 
 # Загружаем .env файл
@@ -26,6 +25,11 @@ class BaseConfig:
     DB_NAME: VectorDBType
     EMBEDDING_MODEL: EmbeddingModelsType
     FAST_LLM_MODEL: LLMModelsType
+
+    # LLM настройки
+    FAST_LLM_HOST: str = "http://localhost:11434"
+    FAST_LLM_TEMPERATURE: float = 0.7
+    FAST_LLM_MAX_TOKENS: int = 1000
     
     # Общие настройки по умолчанию
     CHUNK_SIZE: int = 500
@@ -39,13 +43,14 @@ class SimpleConfig(BaseConfig):
     EMBEDDING_MODEL = EmbeddingModelsType.ALL_MINI_LM_L6_V2
     FAST_LLM_MODEL = LLMModelsType.QWEN3_8B_INSTRUCT
 
-class Qwen3LightConfig():
+class Qwen3LightConfig(BaseConfig):
     """Конфигурация для Qwen3"""
     DB_NAME = VectorDBType.LANCE
     EMBEDDING_MODEL = EmbeddingModelsType.QWEN3_EMBEDDING_4B
     FAST_LLM_MODEL = LLMModelsType.QWEN3_8B_INSTRUCT
 
-
 # Создаем глобальный экземпляр
 simple_config = SimpleConfig()
 qwen3_light_config = Qwen3LightConfig()
+
+config = simple_config

@@ -105,3 +105,4 @@ websockets==15.0.1
 zipp==3.23.0
 pytest==8.4.2
 pytest-mock==3.14.0
+langchain-ollama==0.3.7
