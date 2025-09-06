@@ -210,4 +210,6 @@ __marimo__/
 .vscode
 .logs
 .DS_Store
+.db
+.results
 docs

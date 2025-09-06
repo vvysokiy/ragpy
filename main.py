@@ -1,98 +1,103 @@
 from src.logger import logger
-from src.documents import TextFileLoader, DirectoryLoader
-
-# __eq__ для сравнения
-# doc1 = Document(content="текст", metadata={})
-# doc2 = Document(content="текст", metadata={})
-# doc_chunk1 = DocumentChunk(content="текст", metadata={})
-# doc_chunk2 = DocumentChunk(content="текст", metadata={})
-# print(doc1)
-# __repr__ для удобного вывода
-# print(doc2)
-# print(doc1 == doc2)
-# print(doc_chunk1)
-# print(doc_chunk2)
-# print(doc_chunk1 == doc_chunk2)  # True
+from src.documents import DirectoryLoader, TextChunker, Document, DocumentChunk
+from src.db import ChromaDB
 
 
+from typing import Any
 
-# from pathlib import Path
-# from typing import Optional
-
-# from fastapi import FastAPI
-# from pydantic_settings import BaseSettings
-
-# Создание логгера для текущего модуля
-# logger = setup_logger(__name__)
-
-# Конфигурация приложения
-# class Settings(BaseSettings):
-#     """Базовые настройки приложения."""
-#     # Название приложения
-#     APP_NAME: str = "RAG Service"
-#     # Версия приложения
-#     APP_VERSION: str = "0.1.0"
-#     # Путь к директории с данными
-#     DATA_DIR: Path = Path("data")
-#     # URL для подключения к векторной БД
-#     VECTOR_DB_URL: Optional[str] = None
-#     # Модель для создания эмбеддингов
-#     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
-    
-#     class Config:
-#         env_file = ".env"
-
-# Инициализация приложения
-# app = FastAPI(
-#     title=Settings().APP_NAME,
-#     version=Settings().APP_VERSION,
-#     description="RAG (Retrieval Augmented Generation) сервис для работы с документами"
-# )
-
-# @app.on_event("startup")
-# async def startup_event():
-#     """Действия при запуске приложения."""
-#     logger.info("Инициализация приложения...")
-    
-#     # Создаем директорию для данных, если её нет
-#     settings = Settings()
-#     settings.DATA_DIR.mkdir(exist_ok=True)
-    
-#     logger.info(f"Приложение {settings.APP_NAME} v{settings.APP_VERSION} запущено")
-
-# @app.get("/health")
-# async def health_check():
-#     """Эндпоинт для проверки работоспособности сервиса."""
-#     return {"status": "ok"}
-
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
-# Примеры использования разных уровней логирования
-# def example_logging():
-#     """Пример использования логгера."""
-#     logger.debug("Это debug сообщение")
-#     logger.info("Это info сообщение")
-#     logger.warning("Это warning сообщение")
-#     logger.error("Это error сообщение")
-#     logger.critical("Это critical сообщение")
+from src.utils import save_chunks_analysis, save_formatted_results
 
 if __name__ == "__main__":
     logger.info("Приложение запущено")
     # example_logging()
 
-    loader = TextFileLoader(encoding='utf-8')
+    dir_loader = DirectoryLoader()
+    # documents = dir_loader.load_from_directory(
+    #     'docs',
+    #     glob_pattern='*.*'
+    # )
 
-    # Загружаем один файл
-    # document = loader.load('docs/336869551.pdf')
-    # if document:
-    #     print(f"Загружен документ: {document.metadata['filename']}")
+    # Создаем чанкер
+    # text_chunker = TextChunker(
+    #     chunk_size=500,
+    #     chunk_overlap=50
+    # )
 
-    dir_loader = DirectoryLoader(loader)
-    documents = dir_loader.load_from_directory(
-        'docs',
-        glob_pattern='*.*'
-    )
+    # from src.embeddings import AllMiniLMService
+
+    # Создаем сервис
+    # embedding_service = AllMiniLMService()
+
+    # Тестовые тексты
+    # texts = [
+    #     "Python - высокоуровневый язык программирования",
+    #     "Программирование на питоне очень удобное",
+    #     "Машинное обучение - это интересно"
+    # ]
+
+    # Создаем эмбеддинги
+    # embeddings = embedding_service.create_embeddings(texts)
+
+    # Информация о размерности
+    # print(f"Размерность эмбеддингов: {embedding_service.dimension}")
+    # print(f"Количество векторов: {len(embeddings)}")
+    # print(f"Размер первого вектора: {len(embeddings[0])}")
+
+    # chroma_db = ChromaDB()
+
+    # for document in documents:
+    #     # if document.metadata.get('filename') == '336869551.pdf':
+    #     chunks = text_chunker.create_chunks(document)
+    #     save_chunks_analysis(chunks, f".results/{document.metadata.get('filename')}_chunks_analysis.txt")
+    #     embeddings = embedding_service.create_embeddings([chunk.content for chunk in chunks])
+    #     chroma_db.add_documents(chunks, embeddings)
+    
+    # query = "Что такое сингулярное разложение?"
+    # query_1 = "Психологизм и философия в произведениях Достоевского и Толстого"
+    # query_2 = "Особенности драматургии Чехова и влияние Серебряного века"
+    # query_3 = "Русская литература XIX–XX вв. и её мировое значение"
+    # query_4 = "Национальный характер произведений"
+    # query_embedding = embedding_service.create_embedding(query)
+
+    # results = chroma_db.search(
+    #     query_embedding=query_embedding,
+    #     n_results=2
+    # )
+
+    # save_formatted_results(results)
+
+    # save_formatted_results(
+    #     formatted_results = chroma_db.search(
+    #         query_embedding = embedding_service.create_embedding(query_1),
+    #         n_results=2
+    #     ),
+    #     output_file = ".results/russian_literature_1.txt",
+    # )
+
+    # save_formatted_results(
+    #     formatted_results = chroma_db.search(
+    #         query_embedding = embedding_service.create_embedding(query_2),
+    #         n_results=2
+    #     ),
+    #     output_file = ".results/russian_literature_2.txt",
+    # )
+
+    # save_formatted_results(
+    #     formatted_results = chroma_db.search(
+    #         query_embedding = embedding_service.create_embedding(query_3),
+    #         n_results=2
+    #     ),
+    #     output_file = ".results/russian_literature_3.txt",
+    # )
+
+    # save_formatted_results(
+    #     formatted_results = chroma_db.search(
+    #         query_embedding = embedding_service.create_embedding(query_4),
+    #         n_results=2
+    #     ),
+    #     output_file = ".results/russian_literature_4.txt",
+    # )
+    
+
 
     

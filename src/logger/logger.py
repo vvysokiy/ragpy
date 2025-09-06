@@ -89,6 +89,7 @@ def setup_logger(
     # Отключаем передачу логов родительскому логгеру
     new_logger.propagate = False
 
+
     return new_logger
 
 logger = setup_logger("ragpy")

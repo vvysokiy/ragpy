@@ -26,7 +26,8 @@ class BaseDocumentLoader(ABC):
         Returns:
             Document или None в случае ошибки
         """
-        pass  # Абстрактный метод, реализация будет в дочерних классах
+        raise NotImplementedError("Метод load должен быть реализован в подклассе.")
+        # pass  # Абстрактный метод, реализация будет в дочерних классах
 
     def _logger_info(self, message: str):
         """
@@ -131,6 +132,8 @@ class TextFileLoader(BaseDocumentLoader):
             with path.open(encoding = self.encoding) as file:
                 content = file.read()
 
+            self._logger_info(f"Чтение {source} завершено")
+
             return Document(
                 content=content,
                 metadata=self._generate_metadata(path),
@@ -170,7 +173,8 @@ class PDFLoader(BaseDocumentLoader):
                 # Извлекаем текст из всех страниц
                 for page in pdf.pages:
                     content += page.extract_text() + "\n"
-                self._logger_info(f"Количество страниц в файле {source}: {number_of_pages}")
+
+            self._logger_info(f"Чтение {source} завершено")
 
             # Добавляем специфичные для PDF метаданные
             metadata = self._generate_metadata(path)
@@ -219,6 +223,8 @@ class DocxLoader(BaseDocumentLoader):
                 "type": "docx"
             })
 
+            self._logger_info(f"Чтение {source} завершено")
+
             return Document(
                 content=content,
                 metadata=metadata,
@@ -241,7 +247,7 @@ class DocxLoader(BaseDocumentLoader):
 class DirectoryLoader():
     """Загрузчик для всех поддерживаемых файлов из директории."""
 
-    def __init__(self, loader: BaseDocumentLoader):
+    def __init__(self):
         """
         Args:
             loader: Загрузчик документов определенного типа
@@ -264,12 +270,12 @@ class DirectoryLoader():
             bool: True, если путь существует и является файлом, иначе False.
         """
         if not path.exists():
-            self._logger_error(f"Файл не найден: {str(path)}")
+            logger.error(f"Файл не найден: {str(path)}")
             return False
 
         # Проверяем, что это файл, а не директория
         if not path.is_file():
-            self._logger_error(f"Указанный путь не является файлом: {str(path)}")
+            logger.error(f"Указанный путь не является файлом: {str(path)}")
             return False
             
         return True
@@ -331,7 +337,6 @@ class DirectoryLoader():
         for file_path in file_path_list:
             # Пытаемся загрузить каждый файл
             if doc := self._load(str(file_path)):
-                logger.info(doc.metadata)
                 documents.append(doc)
 
         logger.info("Загружено %s документов из %s", len(documents), directory)
