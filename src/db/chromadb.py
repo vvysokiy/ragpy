@@ -81,6 +81,27 @@ class ChromaDB(DBLogger):
 
         self._logger_info("Инициализация завершена!")
 
+    def clear_collection(self):
+        """
+        Очищает все данные из коллекции.
+        """
+        try:
+            self._logger_info("Очистка коллекции...")
+            
+            # Получаем все ID документов в коллекции
+            all_data = self.collection.get()
+            
+            if all_data['ids']:
+                # Удаляем все документы по их ID
+                self.collection.delete(ids=all_data['ids'])
+                self._logger_info(f"Удалено {len(all_data['ids'])} документов из коллекции")
+            else:
+                self._logger_info("Коллекция уже пуста")
+                
+        except Exception as e:
+            self._logger_error(f"Ошибка очистки коллекции: {e}")
+            raise
+
     def add_documents(
         self,
         chunks: list[DocumentChunk],
